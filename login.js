@@ -14,7 +14,10 @@ chromium.use(stealth());
     process.exit(1);
   }
 
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({
+    headless: false,
+    args: ['--disable-blink-features=AutomationControlled'],
+  });
   const page = await browser.newPage();
 
   console.log('Navigating to login page...');
@@ -37,17 +40,20 @@ chromium.use(stealth());
   );
   console.log('GeeTest captcha loaded and ready');
 
-  // Click GeeTest verify button using dispatchEvent to simulate real user click
+  // Click GeeTest verify button using real mouse events
   console.log('Clicking GeeTest verify button...');
-  await page.evaluate(() => {
-    const btn = document.querySelector('.geetest_btn_click');
-    const rect = btn.getBoundingClientRect();
-    const x = rect.left + rect.width / 2;
-    const y = rect.top + rect.height / 2;
-    btn.dispatchEvent(new PointerEvent('pointerdown', { clientX: x, clientY: y, bubbles: true }));
-    btn.dispatchEvent(new PointerEvent('pointerup', { clientX: x, clientY: y, bubbles: true }));
-    btn.dispatchEvent(new MouseEvent('click', { clientX: x, clientY: y, bubbles: true }));
-  });
+  const btn = page.locator('.geetest_btn_click');
+  const box = await btn.boundingBox();
+  if (!box) {
+    console.error('GeeTest button not found');
+    await page.screenshot({ path: 'debug-no-btn.png', fullPage: true });
+    await browser.close();
+    process.exit(1);
+  }
+  // Move mouse naturally then click
+  await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 10 });
+  await page.waitForTimeout(200);
+  await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2, { delay: 100 });
 
   // Wait for captcha verification to complete
   console.log('Waiting for captcha verification...');

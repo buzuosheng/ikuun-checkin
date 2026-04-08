@@ -37,7 +37,7 @@ jobs:
       env:
         EMAIL: ${{ secrets.EMAIL }}
         PASSWORD: ${{ secrets.PASSWORD }}
-      run: node login.js
+      run: xvfb-run --auto-servernum node login.js
     - name: Upload debug screenshot
       if: failure()
       uses: actions/upload-artifact@v4
