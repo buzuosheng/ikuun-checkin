@@ -28,10 +28,10 @@ jobs:
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: '20'
+        node-version: '22'
     - name: Install Playwright
       run: |
-        npm install playwright
+        npm install playwright-extra puppeteer-extra-plugin-stealth playwright
         npx playwright install chromium --with-deps
     - name: login in APi #登录获取cookie
       env:

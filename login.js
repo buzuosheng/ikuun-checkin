@@ -1,5 +1,8 @@
-const { chromium } = require('playwright');
+const { chromium } = require('playwright-extra');
+const stealth = require('puppeteer-extra-plugin-stealth');
 const fs = require('fs');
+
+chromium.use(stealth());
 
 (async () => {
   const email = process.env.EMAIL;
@@ -16,7 +19,6 @@ const fs = require('fs');
 
   console.log('Navigating to login page...');
   await page.goto(`${domain}/auth/login`, { waitUntil: 'networkidle', timeout: 60000 });
-  await page.screenshot({ path: 'debug-page.png', fullPage: true });
   console.log('Page title:', await page.title());
 
   // Fill credentials
@@ -33,12 +35,14 @@ const fs = require('fs');
   console.log('Clicking GeeTest verify button...');
   await page.click('.geetest_btn_click');
 
+  // Screenshot right after clicking to see what GeeTest shows
+  await page.waitForTimeout(3000);
+  await page.screenshot({ path: 'debug-after-click.png', fullPage: true });
+
   // Wait for captcha verification to complete
   console.log('Waiting for captcha verification...');
   await page.waitForFunction(() => window.Captcha && window.Captcha.isReady(), { timeout: 60000 });
   console.log('Captcha verification passed');
-
-  await page.screenshot({ path: 'debug-after-captcha.png', fullPage: true });
 
   // Click login button and wait for response
   console.log('Clicking login button...');
@@ -55,7 +59,7 @@ const fs = require('fs');
 
   if (result.ret !== 1) {
     console.error('Login failed:', result.msg);
-    await page.screenshot({ path: 'debug-page.png', fullPage: true });
+    await page.screenshot({ path: 'debug-login-fail.png', fullPage: true });
     await browser.close();
     process.exit(1);
   }
