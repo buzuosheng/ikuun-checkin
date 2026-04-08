@@ -91,27 +91,30 @@ chromium.use(stealth());
     process.exit(1);
   }
 
-  // Call the page's login() function directly via clicking login button
+  // Capture login response before clicking (page may navigate away on success)
+  let loginResult = null;
+  page.on('response', async (resp) => {
+    if (resp.url().includes('/auth/login') && resp.request().method() === 'POST') {
+      try {
+        loginResult = await resp.json();
+      } catch (e) {}
+    }
+  });
+
   console.log('Clicking login button...');
-  const [response] = await Promise.all([
-    page.waitForResponse(
-      r => r.url().includes('/auth/login') && r.request().method() === 'POST',
-      { timeout: 30000 }
-    ),
-    page.click('button.login'),
-  ]);
+  await page.click('button.login');
 
-  const result = await response.json();
-  console.log('Login response:', JSON.stringify(result));
-
-  if (result.ret !== 1) {
-    console.error('Login failed:', result.msg);
+  // Wait for navigation to /user (success) or timeout
+  try {
+    await page.waitForURL('**/user', { timeout: 15000 });
+    console.log('Login successful, redirected to:', page.url());
+  } catch (e) {
     await page.screenshot({ path: 'debug-login-fail.png', fullPage: true });
+    console.error('Login failed, current URL:', page.url());
+    if (loginResult) console.error('Login response:', JSON.stringify(loginResult));
     await browser.close();
     process.exit(1);
   }
-
-  console.log('Login successful:', result.msg);
 
   // Save cookies in Netscape format for curl
   const cookies = await page.context().cookies();
