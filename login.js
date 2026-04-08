@@ -16,30 +16,38 @@ const fs = require('fs');
 
   console.log('Navigating to login page...');
   await page.goto(`${domain}/auth/login`, { waitUntil: 'networkidle', timeout: 60000 });
-
-  // Debug: screenshot and log page content
   await page.screenshot({ path: 'debug-page.png', fullPage: true });
   console.log('Page title:', await page.title());
-  console.log('Page URL:', page.url());
 
-  // Wait for login form to be ready
-  await page.waitForSelector('#email, input[name="email"]', { timeout: 30000 });
-  console.log('Login form found');
-
+  // Fill credentials
   console.log('Filling credentials...');
   await page.fill('#email', email);
-  await page.fill('#passwd', password);
+  await page.fill('#password', password);
 
-  // Wait for GeeTest captcha to initialize
-  await page.waitForTimeout(3000);
+  // Wait for GeeTest captcha to be ready
+  console.log('Waiting for GeeTest captcha to load...');
+  await page.waitForFunction(() => window.Captcha && window.Captcha.isLoaded(), { timeout: 30000 });
+  console.log('GeeTest captcha loaded');
 
+  // Click the GeeTest verify button
+  console.log('Clicking GeeTest verify button...');
+  await page.click('.geetest_btn_click');
+
+  // Wait for captcha verification to complete
+  console.log('Waiting for captcha verification...');
+  await page.waitForFunction(() => window.Captcha && window.Captcha.isReady(), { timeout: 60000 });
+  console.log('Captcha verification passed');
+
+  await page.screenshot({ path: 'debug-after-captcha.png', fullPage: true });
+
+  // Click login button and wait for response
   console.log('Clicking login button...');
   const [response] = await Promise.all([
     page.waitForResponse(
       r => r.url().includes('/auth/login') && r.request().method() === 'POST',
       { timeout: 30000 }
     ),
-    page.click('#login'),
+    page.click('button.login'),
   ]);
 
   const result = await response.json();
@@ -47,6 +55,7 @@ const fs = require('fs');
 
   if (result.ret !== 1) {
     console.error('Login failed:', result.msg);
+    await page.screenshot({ path: 'debug-page.png', fullPage: true });
     await browser.close();
     process.exit(1);
   }
