@@ -38,14 +38,6 @@ jobs:
         EMAIL: ${{ secrets.EMAIL }}
         PASSWORD: ${{ secrets.PASSWORD }}
       run: xvfb-run --auto-servernum node login.js
-    - name: Upload debug screenshot
-      if: failure()
-      uses: actions/upload-artifact@v4
-      with:
-        name: debug-screenshot
-        path: |
-          debug-*.png
-          *.log
     - name: Chick in Api #签到
       env:
         SENDKEY: ${{ secrets.SENDKEY }}

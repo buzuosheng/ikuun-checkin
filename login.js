@@ -24,7 +24,6 @@ chromium.use(stealth());
   await page.goto(`${domain}/auth/login`, { waitUntil: 'networkidle', timeout: 60000 });
   console.log('Page title:', await page.title());
 
-  // Fill credentials
   console.log('Filling credentials...');
   await page.fill('#email', email);
   await page.fill('#password', password);
@@ -67,11 +66,6 @@ chromium.use(stealth());
       tipText: document.querySelector('.geetest_tip')?.textContent,
     }));
 
-    if (i === 5) {
-      await page.screenshot({ path: 'debug-after-click.png', fullPage: true });
-      console.log('Captcha state at 5s:', JSON.stringify(state));
-    }
-
     if (state.isReady) {
       passed = true;
       console.log('Captcha verification passed!');
@@ -85,7 +79,6 @@ chromium.use(stealth());
   }
 
   if (!passed) {
-    await page.screenshot({ path: 'debug-captcha-fail.png', fullPage: true });
     console.error('Captcha verification did not pass');
     await browser.close();
     process.exit(1);
@@ -109,7 +102,6 @@ chromium.use(stealth());
     await page.waitForURL('**/user', { timeout: 15000 });
     console.log('Login successful, redirected to:', page.url());
   } catch (e) {
-    await page.screenshot({ path: 'debug-login-fail.png', fullPage: true });
     console.error('Login failed, current URL:', page.url());
     if (loginResult) console.error('Login response:', JSON.stringify(loginResult));
     await browser.close();
