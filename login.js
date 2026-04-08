@@ -17,9 +17,18 @@ const fs = require('fs');
   console.log('Navigating to login page...');
   await page.goto(`${domain}/auth/login`, { waitUntil: 'networkidle', timeout: 60000 });
 
+  // Debug: screenshot and log page content
+  await page.screenshot({ path: 'debug-page.png', fullPage: true });
+  console.log('Page title:', await page.title());
+  console.log('Page URL:', page.url());
+
+  // Wait for login form to be ready
+  await page.waitForSelector('#email, input[name="email"]', { timeout: 30000 });
+  console.log('Login form found');
+
   console.log('Filling credentials...');
-  await page.fill('input[name="email"]', email);
-  await page.fill('input[name="passwd"]', password);
+  await page.fill('#email', email);
+  await page.fill('#passwd', password);
 
   // Wait for GeeTest captcha to initialize
   await page.waitForTimeout(3000);
