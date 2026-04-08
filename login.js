@@ -26,25 +26,66 @@ chromium.use(stealth());
   await page.fill('#email', email);
   await page.fill('#password', password);
 
-  // Wait for GeeTest captcha to be ready
+  // Wait for GeeTest captcha to be fully ready
   console.log('Waiting for GeeTest captcha to load...');
   await page.waitForFunction(() => window.Captcha && window.Captcha.isLoaded(), { timeout: 30000 });
-  console.log('GeeTest captcha loaded');
 
-  // Click the GeeTest verify button
+  // Wait for GeeTest onReady callback (captcha UI rendered)
+  await page.waitForFunction(
+    () => document.querySelector('.geetest_btn_click') !== null,
+    { timeout: 30000 }
+  );
+  console.log('GeeTest captcha loaded and ready');
+
+  // Click GeeTest verify button using dispatchEvent to simulate real user click
   console.log('Clicking GeeTest verify button...');
-  await page.click('.geetest_btn_click');
-
-  // Screenshot right after clicking to see what GeeTest shows
-  await page.waitForTimeout(3000);
-  await page.screenshot({ path: 'debug-after-click.png', fullPage: true });
+  await page.evaluate(() => {
+    const btn = document.querySelector('.geetest_btn_click');
+    const rect = btn.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top + rect.height / 2;
+    btn.dispatchEvent(new PointerEvent('pointerdown', { clientX: x, clientY: y, bubbles: true }));
+    btn.dispatchEvent(new PointerEvent('pointerup', { clientX: x, clientY: y, bubbles: true }));
+    btn.dispatchEvent(new MouseEvent('click', { clientX: x, clientY: y, bubbles: true }));
+  });
 
   // Wait for captcha verification to complete
   console.log('Waiting for captcha verification...');
-  await page.waitForFunction(() => window.Captcha && window.Captcha.isReady(), { timeout: 60000 });
-  console.log('Captcha verification passed');
+  // Check every second, take screenshot at 10s for debugging
+  let passed = false;
+  for (let i = 0; i < 60; i++) {
+    await page.waitForTimeout(1000);
+    const state = await page.evaluate(() => ({
+      isReady: window.Captcha?.isReady(),
+      error: window.Captcha?.getError(),
+      tipText: document.querySelector('.geetest_tip')?.textContent,
+    }));
 
-  // Click login button and wait for response
+    if (i === 5) {
+      await page.screenshot({ path: 'debug-after-click.png', fullPage: true });
+      console.log('Captcha state at 5s:', JSON.stringify(state));
+    }
+
+    if (state.isReady) {
+      passed = true;
+      console.log('Captcha verification passed!');
+      break;
+    }
+
+    if (state.error) {
+      console.error('Captcha error:', state.error);
+      break;
+    }
+  }
+
+  if (!passed) {
+    await page.screenshot({ path: 'debug-captcha-fail.png', fullPage: true });
+    console.error('Captcha verification did not pass');
+    await browser.close();
+    process.exit(1);
+  }
+
+  // Call the page's login() function directly via clicking login button
   console.log('Clicking login button...');
   const [response] = await Promise.all([
     page.waitForResponse(

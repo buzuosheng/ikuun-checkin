@@ -311,3 +311,113 @@ curl 'https://ikuuu.fyi/auth/login' \
   </div>
 </form>
 ```
+
+验证相关逻辑
+
+``` html 
+<script>
+    // 调查很多用户明明被要求验证码，但前端并没有加载验证码组件，导致无法登录的问题
+    // 难道是用户在用几天前加载好的页面？
+    const pageLoadedAt = Date.now();
+    var twoFA = false;
+    function getTwoFACode() {
+      var visibleCodeInput = $("input[name='2fa-code']:visible").first();
+      if (visibleCodeInput.length > 0) {
+        return visibleCodeInput.val();
+      }
+      return $("input[name='2fa-code']").first().val();
+    }
+    function login() {
+      if (!$("#password").val() || !$("#email").val()) {
+        return false;
+      }
+
+      // 统一验证码检查
+            if (!Captcha.isReady()) {
+        swal('请验证身份', '请先完成验证码验证。', 'info');
+        return;
+      }
+      
+      if (twoFA == true) {
+        if (!getTwoFACode()) {
+          return false;
+        }
+      }
+
+      var queryParams = new URLSearchParams(window.location.search);
+      var redirectUrl = queryParams.get('redirect') || '';
+
+      // 前端校验 redirect URL，防止开放重定向漏洞
+      function isValidRedirectUrl(url) {
+        if (!url) return true;
+        // 只允许相对路径（以 / 开头但不是 // 开头）
+        if (url.startsWith('/') && !url.startsWith('//')) {
+          return true;
+        }
+        // 如果是完整 URL，检查是否与当前域名相同
+        try {
+          var urlObj = new URL(url, window.location.origin);
+          return urlObj.origin === window.location.origin;
+        } catch (e) {
+          return false;
+        }
+      }
+
+      if (redirectUrl && !isValidRedirectUrl(redirectUrl)) {
+        console.warn('Invalid redirect URL detected, ignoring:', redirectUrl);
+        redirectUrl = '';
+      }
+
+      $.ajax({
+        type: "POST",
+        url: "/auth/login",
+        dataType: "json",
+        data: {
+          host: window.location.host,
+          email: $("#email").val(),
+          passwd: $("#password").val(),
+          code: getTwoFACode(),
+                    captcha_result: Captcha.getResponse(),
+                    remember_me: $("#remember-me:checked").val(),
+          pageLoadedAt: pageLoadedAt
+        },
+        success: function (data) {
+          if (data.ret == 1) {
+            // 如果有 redirect 参数则跳转，否则默认跳转到 /user
+            if (redirectUrl) {
+              window.location.assign(redirectUrl);
+            } else {
+              window.location.assign('/user');
+            }
+          } else if(data.ret == 2) {
+            var hasTwoFACode = !!getTwoFACode();
+            twoFA = true;
+            $('.login-form-item').hide('500');
+            $('form').removeClass('was-validated');
+            $("div[id='2fa-form']").show('fast');
+                        Captcha.reset();
+                        if (hasTwoFACode) {
+              swal('出错了', '两步验证码错误', 'error');
+            }
+          } else {
+                        Captcha.reset();
+                        var errorMsg = data.msg || '其他错误';
+            if (twoFA == true) {
+              errorMsg = '两步验证码错误'
+            }
+            swal('出错了', errorMsg, 'error');
+          }
+        }
+      });
+    }
+    $("html").keydown(function (event) {
+      if (event.keyCode == 13) {
+        login();
+      }
+    });
+    $(".login").click(function () {
+      login();
+    });
+  </script>
+
+```

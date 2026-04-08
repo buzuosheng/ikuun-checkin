@@ -43,7 +43,9 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: debug-screenshot
-        path: debug-*.png
+        path: |
+          debug-*.png
+          *.log
     - name: Chick in Api #签到
       env:
         SENDKEY: ${{ secrets.SENDKEY }}
