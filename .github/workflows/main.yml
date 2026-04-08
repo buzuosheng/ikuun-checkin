@@ -25,12 +25,19 @@ jobs:
         timezone: Asia/Shanghai          
     - name: Get log
       uses: actions/checkout@master
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+    - name: Install Playwright
+      run: |
+        npm install playwright
+        npx playwright install chromium --with-deps
     - name: login in APi #登录获取cookie
       env:
         EMAIL: ${{ secrets.EMAIL }}
         PASSWORD: ${{ secrets.PASSWORD }}
-      run: | 
-        curl -s -c cookie.txt -X POST "$DOMAIN/auth/login" -d email="$EMAIL" -d passwd="$PASSWORD"
+      run: node login.js
     - name: Chick in Api #签到
       env:
         SENDKEY: ${{ secrets.SENDKEY }}
