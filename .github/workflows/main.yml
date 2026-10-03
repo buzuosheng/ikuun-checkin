@@ -38,7 +38,7 @@ jobs:
       env:
         EMAIL: ${{ secrets.EMAIL }}
         PASSWORD: ${{ secrets.PASSWORD }}
-        MAIL_USER: ikuuu26login@163.com
+        MAIL_USER: ${{ secrets.MAIL_USER }}
         MAIL_AUTH: ${{ secrets.MAIL_AUTH }}
       run: xvfb-run --auto-servernum node login.js
     - name: Chick in Api #签到
