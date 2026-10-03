@@ -7,7 +7,7 @@ chromium.use(stealth());
 (async () => {
   const email = process.env.EMAIL;
   const password = process.env.PASSWORD;
-  const domain = process.env.DOMAIN || 'https://ikuuu.fyi';
+  const domain = process.env.DOMAIN || 'https://ikuuu.pw';
 
   if (!email || !password) {
     console.error('EMAIL and PASSWORD environment variables are required');

@@ -1,13 +1,13 @@
 ## 4.8新的登录请求抓取
-curl 'https://ikuuu.fyi/auth/login' \
+curl 'https://ikuuu.pw/auth/login' \
   -H 'accept: application/json, text/javascript, */*; q=0.01' \
   -H 'accept-language: zh-CN,zh;q=0.9' \
   -H 'cache-control: no-cache' \
   -H 'content-type: application/x-www-form-urlencoded; charset=UTF-8' \
-  -H 'origin: https://ikuuu.fyi' \
+  -H 'origin: https://ikuuu.pw' \
   -H 'pragma: no-cache' \
   -H 'priority: u=1, i' \
-  -H 'referer: https://ikuuu.fyi/auth/login' \
+  -H 'referer: https://ikuuu.pw/auth/login' \
   -H 'sec-ch-ua: "Chromium";v="146", "Not-A.Brand";v="24", "Google Chrome";v="146"' \
   -H 'sec-ch-ua-mobile: ?0' \
   -H 'sec-ch-ua-platform: "macOS"' \
@@ -16,7 +16,7 @@ curl 'https://ikuuu.fyi/auth/login' \
   -H 'sec-fetch-site: same-origin' \
   -H 'user-agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/146.0.0.0 Safari/537.36' \
   -H 'x-requested-with: XMLHttpRequest' \
-  --data-raw 'host=ikuuu.fyi&email=<EMAIL>&passwd=<PASSWORD>&code=&captcha_result%5Blot_number%5D=<LOT_NUMBER>&captcha_result%5Bcaptcha_output%5D=<CAPTCHA_OUTPUT>&captcha_result%5Bpass_token%5D=<PASS_TOKEN>&captcha_result%5Bgen_time%5D=<GEN_TIME>&pageLoadedAt=<TIMESTAMP>'
+  --data-raw 'host=ikuuu.pw&email=<EMAIL>&passwd=<PASSWORD>&code=&captcha_result%5Blot_number%5D=<LOT_NUMBER>&captcha_result%5Bcaptcha_output%5D=<CAPTCHA_OUTPUT>&captcha_result%5Bpass_token%5D=<PASS_TOKEN>&captcha_result%5Bgen_time%5D=<GEN_TIME>&pageLoadedAt=<TIMESTAMP>'
 
 
 ## 登录表单组件

@@ -16,7 +16,7 @@ jobs:
   checking:
     runs-on: ubuntu-latest
     env:
-      DOMAIN: https://ikuuu.fyi
+      DOMAIN: https://ikuuu.pw
     if: github.event.repository.owner.id == github.event.sender.id || github.event_name == 'schedule'
     steps:
     - name: Setup timezone
