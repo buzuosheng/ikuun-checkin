@@ -34,29 +34,53 @@ jobs:
         npm install playwright-extra puppeteer-extra-plugin-stealth playwright
         npx playwright install chromium --with-deps
     - name: login in APi #登录获取cookie
+      id: login
       env:
         EMAIL: ${{ secrets.EMAIL }}
         PASSWORD: ${{ secrets.PASSWORD }}
+        MAIL_USER: ikuuu26login@163.com
+        MAIL_AUTH: ${{ secrets.MAIL_AUTH }}
       run: xvfb-run --auto-servernum node login.js
     - name: Chick in Api #签到
       env:
         SENDKEY: ${{ secrets.SENDKEY }}
       run: | 
         dateTime=`date +%Y-%m-%d\ %H:%M:%S`
+        DOMAIN=$(head -n 1 domain.txt | tr -d '[:space:]')
+        test -n "$DOMAIN"
         response=$(curl -b cookie.txt -X POST "$DOMAIN/user/checkin")
         curl -X POST "https://sctapi.ftqq.com/${SENDKEY}.send" -d "title=${response}&desp=${response}" 
         echo "$dateTime - $(echo -e $response)" >> run.log
         tail run.log #避免日志上传失败丢失日志
+    - name: Notify failure
+      if: failure()
+      env:
+        SENDKEY: ${{ secrets.SENDKEY }}
+      run: |
+        curl -X POST "https://sctapi.ftqq.com/${SENDKEY}.send" \
+          -d "title=ikuuu签到失败&desp=自动签到没有完成。已尝试 domains.txt、旧站公告和 find@ikuuu.pro 的自动回复。请确认 MAIL_AUTH 仍有效，或把新的 https 地址加到 domains.txt 最上面。"
     - name: Commit #上传日志到仓库，可以自行修改 name 和 email
+      id: commit
+      if: always() && steps.login.outcome != 'skipped'
       env:
        NAME: ikuuu
        EMAIL: 1015350043@qq.com
       run: |
         git config --global user.name "$NAME"
         git config --global user.email "$EMAIL"
-        git add .
-        git commit -m "update log" -a
+        git add domains.txt .github/workflows/main.yml run.log
+        if git diff --cached --quiet; then
+          echo "changed=false" >> "$GITHUB_OUTPUT"
+          exit 0
+        fi
+        msg="update log"
+        if ! git diff --cached --name-only | grep -qx 'run.log'; then
+          msg="更新域名"
+        fi
+        git commit -m "$msg"
+        echo "changed=true" >> "$GITHUB_OUTPUT"
     - name: Push log
+      if: steps.commit.outputs.changed == 'true'
       uses: ad-m/github-push-action@master
       with:
         github_token: ${{ secrets.TOKEN }}

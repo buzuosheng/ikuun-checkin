@@ -1,0 +1,10 @@
+# 按从上到下的顺序尝试。
+# 当前地址如果变成「最新域名」公告，会读取公告里的 ikuuu.* 地址再试。
+# 这些都失败时，用 163 邮箱向 find@ikuuu.pro 发信，读取自动回复里的官网。
+# 公告和回信里都没有的新地址，把一行 https 地址加在最上面。
+https://ikuuu.pw
+https://ikuuu.fyi
+https://ikuuu.win
+https://ikuuu.one
+https://ikuuu.de
+https://ikuuu.boo

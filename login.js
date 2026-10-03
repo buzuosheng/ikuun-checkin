@@ -1,13 +1,13 @@
 const { chromium } = require('playwright-extra');
 const stealth = require('puppeteer-extra-plugin-stealth');
 const fs = require('fs');
+const { resolveDomain } = require('./resolve-domain');
 
 chromium.use(stealth());
 
 (async () => {
   const email = process.env.EMAIL;
   const password = process.env.PASSWORD;
-  const domain = process.env.DOMAIN || 'https://ikuuu.pw';
 
   if (!email || !password) {
     console.error('EMAIL and PASSWORD environment variables are required');
@@ -20,8 +20,21 @@ chromium.use(stealth());
   });
   const page = await browser.newPage();
 
-  console.log('Navigating to login page...');
-  await page.goto(`${domain}/auth/login`, { waitUntil: 'networkidle', timeout: 60000 });
+  let domain;
+  try {
+    console.log('Resolving domain...');
+    domain = await resolveDomain(page);
+  } catch (error) {
+    console.error(error.message);
+    await browser.close();
+    process.exit(1);
+  }
+  console.log('Navigating to login page...', domain);
+  if (!page.url().startsWith(`${domain}/auth/login`)) {
+    await page.goto(`${domain}/auth/login`, { waitUntil: 'networkidle', timeout: 60000 });
+  } else {
+    await page.waitForLoadState('networkidle', { timeout: 60000 }).catch(() => {});
+  }
   console.log('Page title:', await page.title());
 
   console.log('Filling credentials...');

@@ -16,6 +16,9 @@ ikuun-checkin 是一个运行在 GitHub Actions 上的自动签到工具，用�
 | 文件 | 用途 |
 |------|------|
 | `login.js` | Playwright 登录脚本，处理 GeeTest V4 验证码，导出 cookies |
+| `resolve-domain.js` | 在候选地址里找到真正的登录页；旧站若变成最新域名公告，则读取公告中的新地址 |
+| `domain-mail.js` | 候选地址都失败时，用 163 邮箱向 `find@ikuuu.pro` 发信并读取自动回复里的官网 |
+| `domains.txt` | 候选站点，从上到下尝试。找到可用地址后会把该地址移到最上面 |
 | `.github/workflows/main.yml` | GitHub Actions 工作流，定时触发登录和签到 |
 | `run.log` | 签到结果日志，自动提交到仓库 |
 | `request.md` | 登录请求抓包记录，用于调试和参考 |
@@ -59,6 +62,7 @@ GeeTest 验证按钮会忽略 JS 合成事件（`dispatchEvent`），必须使�
 | `PASSWORD` | ikuuu 账号密码 |
 | `TOKEN` | GitHub Personal Access Token，用于推送日志 |
 | `SENDKEY` | Server酱 SendKey，用于签到结果推送通知 |
+| `MAIL_AUTH` | `ikuuu26login@163.com` 的 16 位客户端授权码，不是登录密码。只在候选域名都打不开时用来向 `find@ikuuu.pro` 发信 |
 
 ## 定时任务
 
@@ -66,7 +70,7 @@ Cron 表达式 `0 16 * * *`（UTC），即北京时间每天 **00:00** 自动运
 
 ## 开发注意事项
 
-- **域名变更**：ikuuu 域名可能变化，当前为 `https://ikuuu.pw`，在 `main.yml` 的 `DOMAIN` 环境变量中配置
+- **域名变更**：每次运行先按 `domains.txt` 探测。页面必须同时有邮箱框、密码框和原来的 GeeTest captchaId，才会拿去登录。旧域名如果变成「最新域名」公告，只采纳公告里 `ikuuu.*` 的地址。这些都失败时，用 `ikuuu26login@163.com` 给 `find@ikuuu.pro` 发信，只信任发件人包含 `ikuuu.pro` 的回信，并且回信里的地址仍要通过登录页核对。找到的地址写回 `domains.txt` 和 `main.yml` 的 `DOMAIN`
 - **选择器变更**：如果登录页改版，需重新抓取表单元素的选择器并更新 `login.js`
 - **验证码策略变更**：如果 GeeTest 升级或更换验证码服务商，需要相应调整验证流程
 - **登录成功判断**：当前通过页面跳转到 `/user` 判断登录成功，如果网站改变跳转逻辑需同步更新
