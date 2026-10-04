@@ -219,11 +219,11 @@ function isReplyMailbox(name) {
 
 async function inboxUidNext(user, pass) {
   return withImap(user, pass, async (command) => {
-    const status = await command('a3', 'STATUS INBOX (UIDNEXT)');
-    const line = status.map((item) => item.line).join('\n');
-    const match = line.match(/UIDNEXT (\d+)/i);
-    if (!match) throw new Error(`没有读到 UIDNEXT: ${line}`);
-    return Number(match[1]);
+    await command('a3', 'SELECT INBOX');
+    const fetched = await command('a4', 'UID FETCH * (UID)');
+    const line = fetched.map((item) => `${item.line}\n${item.literal || ''}`).join('\n');
+    const match = line.match(/UID (\d+)/i);
+    return match ? Number(match[1]) + 1 : 1;
   });
 }
 
@@ -246,13 +246,13 @@ async function replyTextSince(user, pass, uid) {
       const uids = searchLine.replace(/^\*\s+SEARCH\s*/i, '').trim().split(/\s+/).filter(Boolean);
       for (const messageUid of uids.slice(-5)) {
         const fetched = await command(`a${tag++}`, `UID FETCH ${messageUid} (BODY.PEEK[HEADER.FIELDS (FROM)] BODY.PEEK[TEXT])`);
-        const header = fetched.map((item) => `${item.line}\n${item.literal || ''}`).join('\n');
-        const from = header.match(/^From:.*$/im);
+        const content = fetched.map((item) => item.literal || '').join('\n');
+        const from = content.match(/^From:.*$/im);
         if (!from || !/ikuuu\.pro/i.test(from[0])) {
           console.log('Skip mail from:', from ? from[0].slice(0, 120) : '(no From)');
           continue;
         }
-        text += `\n${header}`;
+        text += `\n${content}`;
       }
     }
     return text;
