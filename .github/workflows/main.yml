@@ -25,6 +25,8 @@ jobs:
         timezone: Asia/Shanghai          
     - name: Get log
       uses: actions/checkout@master
+      with:
+        ref: main
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
@@ -85,3 +87,4 @@ jobs:
       with:
         github_token: ${{ secrets.TOKEN }}
         branch: main
+        pull: true
